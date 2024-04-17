@@ -11,7 +11,7 @@ do
     Newusername=$username
     suffix=1
     while id -u $Newusername &>/dev/null; do
-        Newusername="${$username}${suffix}"
+        Newusername="${username}${suffix}"
         suffix=$((suffix+1))
     done
 
@@ -22,8 +22,10 @@ do
     if ! getent group "$GroupMain" &>/dev/null; then
         groupadd "$GroupMain"
     fi
+    Hpassword=$(openssl passwd -6 "$password")
+    useradd -m -g "$GroupMain" -c "$firstname $lastname" -p "$Hpassword" "$Newusername"
 
-    useradd -m -g "$GroupMain" -c "$firstname $lastname" -p "$password" "$Newusername"
+    chage -E 99999 $Newusername
 
     for group in $GroupSecond; do
         if ! getent group "$group" &>/dev/null; then
@@ -40,6 +42,8 @@ do
         touch "/home/$Newusername/fichierNum$i"
         head -c $((RANDOM % 46 + 5))M /dev/urandom > "/home/$Newusername/fichierNum$i" &>/dev/null
     done
+
+    echo 'export PS1="\u@\h:\w\$ "' >> "/home/$Newusername/.bashrc"
 
 done < $1
 
