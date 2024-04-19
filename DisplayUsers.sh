@@ -1,13 +1,14 @@
 #!/bin/bash
 
 while IFS=: read -r username _ _ uid _ _ _; do
+    filter=0
     user_info=$(getent passwd "$username")
     IFS=':' read -ra info <<< "$user_info"
     login="${info[0]}"
     full_name="${info[4]}"
     home_directory="${info[5]}"
     
-    primary_group=$(getent group | awk -F: '$3 == '"$(id -g "$username")"' {print $1}')
+    GroupMain=$(getent group | awk -F: '$3 == '"$(id -g "$username")"' {print $1}')
 
     secondary_groups=$(id -nG "$username" | sed -e "s/$primary_group//" -e "s/ /,/g")
 
@@ -22,12 +23,26 @@ while IFS=: read -r username _ _ uid _ _ _; do
 
     IFS=' ' read -r first_name last_name <<< "$full_name"
 
-    echo "Utilisateur: $login"
-    echo "Prénom: $first_name"
-    echo "Nom: $last_name"
-    echo "Groupe primaire: $primary_group"
-    echo "Groupes secondaires: $secondary_groups"
-    echo "Répertoire personnel: $dir_size"
-    echo "Sudoer: $sudo_status"
-    echo "-----------------------------------"
+    if [ "$1" = "-G" ]; then
+        if [ "$GroupMain" != "$2" ]; then
+            filter=1
+        fi
+    fi
+
+    if [ "$1" = "-g" ]; then
+        if ! echo "$secondary_groups" | grep -q "$2"; then
+            filter=1
+        fi
+    fi
+
+    if [ "$filter" -eq 0 ]; then
+        echo "Utilisateur: $login"
+        echo "Prenom: $first_name"
+        echo "Nom: $last_name"
+        echo "Groupe Principal: $GroupMain"
+        echo "Autre groupes: $secondary_groups"
+        echo "Taille du rep personnel: $dir_size"
+        echo "Sudo: $sudo_status"
+        echo "-----------------------------------"
+    fi
 done < <(getent passwd | grep -vE "nologin|false")
