@@ -25,8 +25,6 @@ do
     Hpassword=$(openssl passwd -6 "$password")
     useradd -m -g "$GroupMain" -c "$firstname $lastname" -p "$Hpassword" "$Newusername"
 
-    chage -E 99999 $Newusername
-
     for group in $GroupSecond; do
         if ! getent group "$group" &>/dev/null; then
             groupadd "$group"
@@ -44,7 +42,5 @@ do
     done
 
     echo 'export PS1="\u@\h:\w\$ "' >> "/home/$Newusername/.bashrc"
-
+    echo "User $Newusername created!"
 done < $1
-
-echo "User $Newusername created!"
