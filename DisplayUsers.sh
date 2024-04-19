@@ -18,12 +18,13 @@ while IFS=: read -r username _ _ uid _ _ _; do
         sudo_status="NON"
     fi
 
-    #ptet remettre le s
-    dir_size=$(du -h "$home_directory" 2>/dev/null | cut -f1)
+    dir_size=$(du -sh "$home_directory" 2>/dev/null | cut -f1)
+
+    IFS=' ' read -r first_name last_name <<< "$full_name"
 
     echo "Utilisateur: $login"
-    echo "Prénom: ${full_name%% *}"
-    echo "Nom: ${full_name##* }"
+    echo "Prénom: $first_name"
+    echo "Nom: $last_name"
     echo "Groupe primaire: $primary_group"
     echo "Groupes secondaires: $secondary_groups"
     echo "Répertoire personnel: $dir_size"
