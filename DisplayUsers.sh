@@ -1,27 +1,27 @@
 #!/bin/bash
 
-while IFS=: read -r username _ _ uid _ _ _; do
+while IFS=: read -r username _ _ _ _ _ _; do
     filter=0
-    user_info=$(getent passwd "$username")
-    IFS=':' read -ra info <<< "$user_info"
+    userInfo=$(getent passwd "$username")
+    IFS=':' read -ra info <<< "$userInfo"
     login="${info[0]}"
-    full_name="${info[4]}"
-    home_directory="${info[5]}"
+    fullName="${info[4]}"
+    homeDirectory="${info[5]}"
     
     GroupMain=$(getent group | awk -F: '$3 == '"$(id -g "$username")"' {print $1}')
 
-    secondary_groups=$(id -nG "$username" | sed -e "s/$primary_group//" -e "s/ /,/g")
+    GroupSecond=$(id -nG "$username" | sed -e "s/$GroupMain//" -e "s/ /,/g")
 
-    sudo_status=""
+    sudoStatus=""
     if groups "$username" | grep -qw "sudo"; then
-        sudo_status="OUI"
+        sudoStatus="OUI"
     else
-        sudo_status="NON"
+        sudoStatus="NON"
     fi
 
-    dir_size=$(du -sh "$home_directory" 2>/dev/null | cut -f1)
+    dir_size=$(du -sh "$homeDirectory" 2>/dev/null | cut -f1)
 
-    IFS=' ' read -r first_name last_name <<< "$full_name"
+    IFS=' ' read -r firstName lastName <<< "$fullName"
 
     if [ "$1" = "-G" ]; then
         if [ "$GroupMain" != "$2" ]; then
@@ -30,19 +30,34 @@ while IFS=: read -r username _ _ uid _ _ _; do
     fi
 
     if [ "$1" = "-g" ]; then
-        if ! echo "$secondary_groups" | grep -q "$2"; then
+        if ! echo "$GroupSecond" | grep -q "$2"; then
+            filter=1
+        fi
+    fi
+
+    if [ "$1" = "-s" ]; then
+        if [ "$2" = "0" ] && [ "$sudoStatus" = "OUI" ]; then
+            filter=1
+        fi
+        if [ "$2" = "1" ] && [ "$sudoStatus" = "NON" ]; then
+            filter=1
+        fi
+    fi
+
+    if [ "$1" = "-u" ]; then
+        if [ "$login" != "$2" ]; then
             filter=1
         fi
     fi
 
     if [ "$filter" -eq 0 ]; then
         echo "Utilisateur: $login"
-        echo "Prenom: $first_name"
-        echo "Nom: $last_name"
+        echo "Prenom: $firstName"
+        echo "Nom: $lastName"
         echo "Groupe Principal: $GroupMain"
-        echo "Autre groupes: $secondary_groups"
+        echo "Autre groupes: $GroupSecond"
         echo "Taille du rep personnel: $dir_size"
-        echo "Sudo: $sudo_status"
+        echo "Sudo: $sudoStatus"
         echo "-----------------------------------"
     fi
 done < <(getent passwd | grep -vE "nologin|false")
