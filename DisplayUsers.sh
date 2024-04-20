@@ -58,6 +58,6 @@ while IFS=: read -r username _ _ _ _ _ _; do
         echo "Autre groupes: $GroupSecond"
         echo "Taille du rep personnel: $dir_size"
         echo "Sudo: $sudoStatus"
-        echo "-----------------------------------"
+        echo "=================================================="
     fi
 done < <(getent passwd | grep -vE "nologin|false")
